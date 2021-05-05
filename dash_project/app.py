@@ -1,6 +1,7 @@
 import dash_table
 import dash_html_components as html
 import dash_core_components as dcc
+import dash_bootstrap_components as dbc
 
 from .server import app
 from dash_project.get_data import ticker_list
@@ -11,7 +12,7 @@ from dash_project.visualization import get_chart
 from dash.dependencies import Input, Output, State
 
 # column names
-window_names_p = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly']
+window_names_p = ['ticker','daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'vs 52w max', 'vs 52w min']
 window_names_rel_p = ['vs', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly']
 window_names_corr_table = ['vs','15D','30D','90D','120D','1y 30d corr high','1y 30d corr low']
 
@@ -27,7 +28,8 @@ app.layout = html.Div(children=[
                     id='input_on_submit_rel_p',
                     options=[{'label': x, 'value': x} for x in ticker_list],
                     multi=True,
-                    placeholder='Select ticker(s)'
+                    placeholder='Select ticker(s)',
+                    value=['XLY','XLF','XLV','XLK','XLP','XLI','XLB','XLE','XLU','XLRE','XLC']
                 ),
                 html.Button(
                     'Submit tickers',
@@ -38,20 +40,23 @@ app.layout = html.Div(children=[
             html.Div([
                 dcc.Input(
                     id='input_on_submit',
-                    value='GLD',
+                    value='SPY',
                     placeholder='Input ticker'
                 )
             ]),
             html.Br(),
             html.Div([
+                html.Div(
+                    id='chart_title'
+                ),
                 dcc.Graph(
                     id='graph_of_chart'
                 )
-            ], style={'width': '49%', 'display': 'inline-block', 'padding': '0 20', 'textAlign': 'center'}),
+            ]),
             html.Br(),
             html.Div([
                 html.Div(
-                    id='performance_table_title'
+                    'Sector performance'
                 ),
                 dash_table.DataTable(
                     id='performance_table',
@@ -68,15 +73,6 @@ app.layout = html.Div(children=[
                     columns=[{'name': c, 'id': c} for c in window_names_rel_p]
                 )
             ])
-            # html.Br(),
-            # html.Div([
-            #     dash_table.DataTable(
-            #         id='sector_performance',
-            #         data=getSector_performance.to_dict("records"),
-            #         columns=[{'name': c, 'id': c} for c in getSector_performance.columns]
-            #     )
-            # ])
-
         ]),
 
         dcc.Tab(label='Correlations', children=[

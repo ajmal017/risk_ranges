@@ -29,7 +29,8 @@ from sympy.stats import Normal, cdf
 from matplotlib.ticker import Formatter
 from dash.dependencies import Input, Output, State
 
-# btc = pd.read_csv('./data/BTC-USD.csv')
+btc = pd.read_csv('../data/BTC-USD.csv')
+print(hurst(btc['Close']))
 # spy = pd.read_csv('./data/SPY.csv')
 # gc = pd.read_csv('./data/GLD.csv')
 # eurusd = pd.read_csv('./data/DX=F.csv')
@@ -115,45 +116,6 @@ def format_date(x, pos=None):
     thisind = np.clip(int(x + 0.5), 0, N - 1)
     global df_year
     return df_year['DateTime'][thisind].strftime('%Y-%m-%d')
-
-# getting hurst component of ticker
-def hurst(ts):
-    ts = list(ts)
-    N = len(ts)
-    if N < 20:
-        raise ValueError(
-            "Time series is too short! input series ought to have at least 20 samples!")
-    max_k = int(np.floor(N / 2))
-    R_S_dict = []
-    for k in range(10, max_k + 1):
-        R, S = 0, 0
-        # split ts into subsets
-        subset_list = [ts[i:i + k] for i in range(0, N, k)]
-        # print(subset_list)
-    if np.mod(N, k) > 0:
-        subset_list.pop()
-        # tail = subset_list.pop()
-    # subset_list[-1].extend(tail)
-    # calc mean of every subset
-    mean_list = [np.mean(x) for x in subset_list]
-    for i in range(len(subset_list)):
-        cumsum_list = pd.Series(subset_list[i] - mean_list[i]).cumsum()
-        R += max(cumsum_list) - min(cumsum_list)
-        S += np.std(subset_list[i])
-        R_S_dict.append({"R": R / len(subset_list),
-                         "S": S / len(subset_list), "n": k})
-
-    log_R_S = []
-    log_n = []
-    #print(R_S_dict)
-    for i in range(len(R_S_dict)):
-        R_S = (R_S_dict[i]["R"] + np.spacing(1)) / \
-            (R_S_dict[i]["S"] + np.spacing(1))
-        log_R_S.append(np.log(R_S))
-        log_n.append(np.log(R_S_dict[i]["n"]))
-
-    Hurst_exponent = np.polyfit(log_n, log_R_S, 1)[0]
-    return Hurst_exponent
 
 # getting average true range
 def avg_true_range(lst, timeperiod):

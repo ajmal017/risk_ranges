@@ -45,25 +45,31 @@ def get_correlation_table_window_x(TICKER, n_clicks, MULTP_TICKERS):
 
 @app.callback(
     Output('performance_table', 'data'),
-    Input('input_on_submit', 'value')
+    [Input('input_on_submit', 'value'),
+     Input('submit_val_rel_p', 'n_clicks')],
+    [State('input_on_submit_rel_p', 'value')]
 )
-def get_performance(TICKER):
-    window_names = ['daily','weekly','monthly','quarterly','yearly']
-    data = all_tickers_data[TICKER]
-    latest = data[-1]
+def get_performance(TICKER, n_clicks, MULTP_TICKERS):
+    window_names = ['ticker','daily','weekly','monthly','quarterly','yearly', 'vs 52w max', 'vs 52w min']
     df = pd.DataFrame()
-    range = [2, 6, 21, 63, 252]
-    results = []
-    for time in range:
-        results.append((latest - data[-time]) / latest)
-    results = ["{:.2%}".format(y) for y in results]
-    df[f'{TICKER}'] = results
-    df = df.T
+    ticker_list = [TICKER] + MULTP_TICKERS
+    for ticker in ticker_list:
+        data = all_tickers_data[ticker]
+        latest = data[-1]
+        range = [2, 6, 21, 63, 252]
+        results = []
+        for time in range:
+            results.append((latest - data[-time]) / latest)
+        yearly_high = data.max()
+        yearly_low = data.min()
+        vs_52_max = -((yearly_high - latest) / latest)
+        vs_52_min = -((yearly_low - latest) / latest)
+        results.append(vs_52_max)
+        results.append(vs_52_min)
+        results = ["{:.2%}".format(y) for y in results]
+        df[ticker] = results
+    df = df.T.reset_index()
     df.columns = window_names
-    yearly_high = data.max()
-    yearly_low = data.min()
-    df['vs 52w max'] = "{:.2%}".format((yearly_high - latest) / latest)
-    df['vs 52w min'] = "{:.2%}".format((yearly_low - latest) / latest)
     return df.to_dict('records')
 
 @app.callback(

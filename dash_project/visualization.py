@@ -46,26 +46,23 @@ def get_chart(input_value):
         x=data.index,
         y=data,
         name='price'))
-
-    fig.update_layout(
-        title={
-            'text':'{} chart'.format(input_value),
-            'xanchor':'center',
-            'yanchor':'top'
-        },
-        legend_font_size=20,
-        width=1200,
-        height=500)
     fig.update_xaxes(title='date')
     fig.update_yaxes(title='price')
     return fig
 
 @app.callback(
-    Output('performance_table_title', 'children'),
+    Output('chart_title', 'children'),
     Input('input_on_submit', 'value')
 )
-def performance_table_title(input_value):
-    return 'Performance of {}'.format(input_value)
+def chart_title(input_value):
+    return 'Chart of {}'.format(input_value)
+
+# @app.callback(
+#     Output('performance_table_title', 'children'),
+#     Input('input_on_submit', 'value')
+# )
+# def performance_table_title(input_value):
+#     return 'Performance of {}'.format(input_value)
 
 @app.callback(
     Output('relative_performance_table_title', 'children'),
