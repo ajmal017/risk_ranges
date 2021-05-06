@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import dash_bootstrap_components as dbc
 
 from dash.dependencies import Input, Output, State
 from dash_project.get_data import all_tickers_data
@@ -44,7 +45,7 @@ def get_correlation_table_window_x(TICKER, n_clicks, MULTP_TICKERS):
     return df.round(2).to_dict('records')
 
 @app.callback(
-    Output('performance_table', 'data'),
+    Output('performance_table', 'children'),
     [Input('input_on_submit', 'value'),
      Input('submit_val_rel_p', 'n_clicks')],
     [State('input_on_submit_rel_p', 'value')]
@@ -70,10 +71,10 @@ def get_performance(TICKER, n_clicks, MULTP_TICKERS):
         df[ticker] = results
     df = df.T.reset_index()
     df.columns = window_names
-    return df.to_dict('records')
+    return dbc.Table.from_dataframe(df.round(2), bordered=True)
 
 @app.callback(
-    Output('relative_p', 'data'),
+    Output('relative_p', 'children'),
     [Input('input_on_submit', 'value'),
      Input('submit_val_rel_p', 'n_clicks')],
     [State('input_on_submit_rel_p', 'value')]
@@ -94,7 +95,7 @@ def relative_performance(TICKER, n_clicks, MULTP_TICKERS):
         df[f'{i}'] = results
     df = df.T.reset_index()
     df.columns = window_names_rel_performance
-    return df.to_dict('records')
+    return dbc.Table.from_dataframe(df, bordered=True)
 
 
 

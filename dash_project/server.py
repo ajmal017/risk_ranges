@@ -1,8 +1,11 @@
-from flask import Flask
 import dash
-from quart import Quart
+import dash_bootstrap_components as dbc
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+from quart import Quart
+from flask import Flask
+
+
+# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 server = Flask('__name__')
-app = dash.Dash(server=server, external_stylesheets=external_stylesheets)
+app = dash.Dash(server=server, external_stylesheets=[dbc.themes.BOOTSTRAP])

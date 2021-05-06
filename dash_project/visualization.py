@@ -50,37 +50,37 @@ def get_chart(input_value):
     fig.update_yaxes(title='price')
     return fig
 
-@app.callback(
-    Output('chart_title', 'children'),
-    Input('input_on_submit', 'value')
-)
-def chart_title(input_value):
-    return 'Chart of {}'.format(input_value)
-
 # @app.callback(
-#     Output('performance_table_title', 'children'),
+#     Output('chart_title', 'children'),
 #     Input('input_on_submit', 'value')
 # )
-# def performance_table_title(input_value):
-#     return 'Performance of {}'.format(input_value)
-
-@app.callback(
-    Output('relative_performance_table_title', 'children'),
-    Input('input_on_submit', 'value')
-)
-def get_relative_performance_table_title(input_value):
-    return 'Relative performance of selected tickers vs {}'.format(input_value)
-
-@app.callback(
-    Output('correlation_table_title', 'children'),
-    Input('input_on_submit', 'value')
-)
-def get_relative_performance_table_title(input_value):
-    return 'Correlation table of selected tickers vs {}'.format(input_value)
-
-@app.callback(
-    Output('correlation_chart_title', 'children'),
-    Input('input_on_submit', 'value')
-)
-def get_relative_performance_table_title(input_value):
-    return '30D rolling correlation chart of selected tickers vs {}'.format(input_value)
+# def chart_title(input_value):
+#     return 'Chart of {}'.format(input_value)
+#
+# # @app.callback(
+# #     Output('performance_table_title', 'children'),
+# #     Input('input_on_submit', 'value')
+# # )
+# # def performance_table_title(input_value):
+# #     return 'Performance of {}'.format(input_value)
+#
+# @app.callback(
+#     Output('relative_performance_table_title', 'children'),
+#     Input('input_on_submit', 'value')
+# )
+# def get_relative_performance_table_title(input_value):
+#     return 'Relative performance of selected tickers vs {}'.format(input_value)
+#
+# @app.callback(
+#     Output('correlation_table_title', 'children'),
+#     Input('input_on_submit', 'value')
+# )
+# def get_relative_performance_table_title(input_value):
+#     return 'Correlation table of selected tickers vs {}'.format(input_value)
+#
+# @app.callback(
+#     Output('correlation_chart_title', 'children'),
+#     Input('input_on_submit', 'value')
+# )
+# def get_relative_performance_table_title(input_value):
+#     return '30D rolling correlation chart of selected tickers vs {}'.format(input_value)
