@@ -26,11 +26,11 @@ def getTickerlist():
         flatList.extend(elem)
     return flatList
 
-def getClose_all_tickers(securities_list):
+def getTickers_data(securities_list):
     date_time = get_data(securities_list[0])[1]
     dataframe = pd.DataFrame()
     for i in securities_list:
-        dataframe[i] = get_data(i)[2]
+        date_n_close, date, dataframe[f'{i}_close'], dataframe[f'{i}_volume'] = get_data(i)
     dataframe = dataframe.set_index(date_time)
 
     for column in list(dataframe.columns):
@@ -38,7 +38,10 @@ def getClose_all_tickers(securities_list):
             dataframe = dataframe.drop(columns=[f'{column}'])
             data = get_data(column)[0].set_index('date').rename(columns={'close': f'{column}'})
             dataframe = dataframe.join(data, on='date')
-    return dataframe.interpolate()
+    dataframe.interpolate()
+    df_close = dataframe.filter(regex='close$', axis=1)
+    df_volume = dataframe.filter(regex='volume$', axis=1)
+    return df_close, df_volume
 
 def data(TICKER, securities_list):
     date_time = get_data(securities_list[0])[1]
@@ -154,13 +157,14 @@ def get_data(Ticker):
         )
 
     dataframe = util.df(historical_data)
-    date_n_close = dataframe.iloc[:,[0,4]]
+    date_n_close = dataframe.iloc[:,[0,4,5]]
     date = dataframe.date
     close = dataframe.close
-    return date_n_close, date, close
+    volume = dataframe.volume
+    return date_n_close, date, close, volume
 
 # list of all tickers
 ticker_list = getTickerlist()
 
 # close data for all tickers in list of all tickers
-all_tickers_data = getClose_all_tickers(ticker_list)
+all_tickers_data, all_tickers_data_volume = getTickers_data(ticker_list)
