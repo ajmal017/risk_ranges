@@ -59,14 +59,34 @@ def get_correlation_table_window_x(TICKER, n_clicks, MULTP_TICKERS):
      State('input_on_submit_rel_p', 'value')]
 )
 def get_performance(n_clicks, n_clicks_rel_val, TICKER, MULTP_TICKERS):
-    window_names = ['ticker','daily','weekly','monthly','quarterly','yearly', 'vs 52w max', 'vs 52w min']
+    window_names = ['Ticker', 'Price', '1-Day %', 'MTD %', 'QTD %', 'YTD %', 'vs 52w max', 'vs 52w min']
+    end_dt = date.today()
+    start_dt_ytd = date(2021, 1, 1)
+    start_dt_qtd = date(2021, 4, 1)
+    start_dt_mtd = end_dt.replace(day=1)
+    len_mtd = 0
+    len_qtd = 0
+    len_ytd = 0
+    weekdays = [5, 6]
+    for dt in daterange(start_dt_ytd, end_dt):
+        if dt.weekday() not in weekdays:
+            len_ytd += 1
+
+    for dt in daterange(start_dt_qtd, end_dt):
+        if dt.weekday() not in weekdays:
+            len_qtd += 1
+
+    for dt in daterange(start_dt_mtd, end_dt):
+        if dt.weekday() not in weekdays:
+            len_mtd += 1
+
     df = pd.DataFrame()
     MULTP_TICKERS = [i + '_close' for i in MULTP_TICKERS]
     ticker_list = [f'{TICKER}_close'] + MULTP_TICKERS
     for ticker in ticker_list:
         data = all_tickers_data[ticker]
         latest = data[-1]
-        range = [2, 6, 21, 63, 252]
+        range = [2, len_mtd, len_qtd, len_ytd]
         results = []
         for time in range:
             results.append((latest - data[-time]) / latest)
@@ -77,24 +97,49 @@ def get_performance(n_clicks, n_clicks_rel_val, TICKER, MULTP_TICKERS):
         results.append(vs_52_max)
         results.append(vs_52_min)
         results = ["{:.2%}".format(y) for y in results]
+        results.insert(0, data[-1])
         df[ticker[:-6]] = results
     df = df.T.reset_index()
     df.columns = window_names
-    return dbc.Table.from_dataframe(df.round(2), bordered=True)
+    return dbc.Table.from_dataframe(
+        df.round(2),
+        bordered=True)
 
 @app.callback(
     Output('relative_p', 'children'),
-    [Input('input_on_submit', 'value'),
+    [Input('submit_val', 'n_clicks'),
      Input('submit_val_rel_p', 'n_clicks')],
-    [State('input_on_submit_rel_p', 'value')]
+    [State('input_on_submit', 'value'),
+     State('input_on_submit_rel_p', 'value')]
 )
-def relative_performance(TICKER, n_clicks, MULTP_TICKERS):
-    window_names_rel_performance = ['vs', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly']
+def relative_performance(n_clicks, n_clicks_rel_p, TICKER, MULTP_TICKERS):
+    window_names_rel_performance = ['vs', '1-Day %', 'MTD %', 'QTD %', 'YTD %']
     MULTP_TICKERS = [i + '_close' for i in MULTP_TICKERS]
     data = all_tickers_data.loc[:,MULTP_TICKERS]
     ticker_data = all_tickers_data.loc[:,f'{TICKER}_close']
+
+    end_dt = date.today()
+    start_dt_ytd = date(2021, 1, 1)
+    start_dt_qtd = date(2021, 4, 1)
+    start_dt_mtd = end_dt.replace(day=1)
+    len_mtd = 0
+    len_qtd = 0
+    len_ytd = 0
+    weekdays = [5,6]
+    for dt in daterange(start_dt_ytd, end_dt):
+        if dt.weekday() not in weekdays:
+            len_ytd += 1
+
+    for dt in daterange(start_dt_qtd, end_dt):
+        if dt.weekday() not in weekdays:
+            len_qtd += 1
+
+    for dt in daterange(start_dt_mtd, end_dt):
+        if dt.weekday() not in weekdays:
+            len_mtd += 1
+
+    range = [2, len_mtd, len_qtd, len_ytd]
     df = pd.DataFrame()
-    range = [2, 6, 21, 63, 252]
     for i in MULTP_TICKERS:
         results = []
         latest_i = data[i].iloc[-1]
@@ -106,7 +151,6 @@ def relative_performance(TICKER, n_clicks, MULTP_TICKERS):
     df = df.T.reset_index()
     df.columns = window_names_rel_performance
     return dbc.Table.from_dataframe(df, bordered=True)
-
 
 def factor_sector_performance():
     window_names = ['index','1D','1W','1M','3M','6M','YTD']

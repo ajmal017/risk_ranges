@@ -1,18 +1,14 @@
-import dash_table
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
+import dash_table
 
 from .server import app
 from dash_project.get_data import ticker_list
-
+from dash_project.cftc_analyser import cftc_df
 from dash_project.performance import factor_sector_performance
-from dash_project.rescaled_range import hurst, hurst_range
-from dash_project.visualization import get_chart
 from dash.dependencies import Input, Output, State
 
-
-app.config['suppress_callback_exceptions'] = True
 
 # the style arguments for the sidebar. We use position:fixed and a fixed width
 SIDEBAR_STYLE = {
@@ -53,16 +49,6 @@ sidebar = html.Div(
     ],
     style=SIDEBAR_STYLE,
 )
-
-content = html.Div(
-    id="page-content",
-    style=CONTENT_STYLE)
-
-app.layout = html.Div([
-    dcc.Location(id="url"),
-    sidebar,
-    content
-])
 
 sec_selector = html.Div(
     [
@@ -113,9 +99,35 @@ base_sec_selector = html.Div(
     ]
 )
 
+style_dc = [{
+               'if': {
+                   'filter_query': '{1y zscore} < -1.5',
+                   'column_id': '1y zscore'},
+               'backgroundColor':'tomato',
+               'color':'white'},\
+           {
+               'if': {
+                   'filter_query': '{1y zscore} > 1.5',
+                   'column_id': '1y zscore'},
+               'backgroundColor': '#3D9970',
+               'color': 'white'},\
+           {
+               'if': {
+                   'filter_query': '{3y zscore} < -1.5',
+                   'column_id': '3y zscore'},
+               'backgroundColor': 'tomato',
+               'color': 'white'},\
+           {
+               'if': {
+                   'filter_query': '{3y zscore} > 1.5',
+                   'column_id': '3y zscore'},
+               'backgroundColor': '#3D9970',
+               'color': 'white'}]
+
 @app.callback(
     Output("page-content", "children"),
-    [Input("url", "pathname")])
+    [Input("url", "pathname")]
+)
 def render_page_content(pathname):
     if pathname == "/":
         return html.P("This is the content of the home page!")
@@ -210,6 +222,32 @@ def render_page_content(pathname):
             ])
         ])
 
+    elif pathname == '/cftc':
+        return dbc.Container([
+            dbc.Row([
+                dbc.Col(
+                   base_sec_selector
+                ),
+                dbc.Col(
+
+                )
+            ]),
+            dbc.Row([
+                dbc.Col([
+                    html.Br(),
+                    html.Br(),
+                    html.H4('CFTC Non-Commercial Net Long Positioning'),
+                    dash_table.DataTable(
+                        data=cftc_df.to_dict('records'),
+                        columns=[{"name": i, "id": i} for i in cftc_df.columns],
+                        sort_action='native',
+                        editable=True,
+                        style_data_conditional=style_dc
+                    )
+                ])
+            ])
+        ])
+
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
         [
@@ -218,3 +256,13 @@ def render_page_content(pathname):
             html.P(f"The pathname {pathname} was not recognised..."),
         ]
     )
+
+content = html.Div(
+    id="page-content",
+    style=CONTENT_STYLE)
+
+app.layout = html.Div([
+    dcc.Location(id="url"),
+    sidebar,
+    content
+])

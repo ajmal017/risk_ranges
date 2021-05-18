@@ -6,8 +6,8 @@ import plotly.tools as tls
 
 from dash.dependencies import Input, Output, State
 from dash_project.get_data import get_data, all_tickers_data
-# from dash_project.get_data import getTickers_data
 from .server import app
+
 
 @app.callback(
     Output('correlation_chart', 'figure'),
@@ -25,7 +25,6 @@ def get_correlation_chart(TICKER, n_clicks, MULTP_TICKERS):
         for i in list(MULTP_TICKERS):
             dataframe[f'{TICKER}_{i}_{window}'] = ticker_data.rolling(window).corr(data[i])
     l = int(len(dataframe.columns)/len(window_list))
-
     fig = go.Figure()
     x = data.index
     for i in list(dataframe.columns):
@@ -37,15 +36,10 @@ def get_correlation_chart(TICKER, n_clicks, MULTP_TICKERS):
 
 @app.callback(
     Output('graph_of_chart', 'figure'),
-    Input('submit_ticker', 'n_clicks'),
-    [State('input_on_submit', 'value')]
+    [Input('input_on_submit', 'value')]
 )
 def get_chart(TICKER):
-    '''
-    :param data: Dataframe from get_data() function
-    :return: Plots a graph and a moving average of the security' closing prices
-    '''
-    data = all_tickers_data[TICKER+'_close']
+    data = all_tickers_data.loc[:,f'{TICKER}_close']
     fig = go.Figure(go.Scatter(
         x=data.index,
         y=data,
@@ -54,37 +48,28 @@ def get_chart(TICKER):
     fig.update_yaxes(title='price')
     return fig
 
-# @app.callback(
-#     Output('chart_title', 'children'),
-#     Input('input_on_submit', 'value')
-# )
-# def chart_title(input_value):
-#     return 'Chart of {}'.format(input_value)
+# def create_z_score_plot(list_of_i_and_date, path_to_figure):
+#     weeks = []
+#     for i in range(0,156):
+#         weeks.append(datetime.now() - relativedelta(weeks=i))
+#     weeks.reverse()
 #
-# # @app.callback(
-# #     Output('performance_table_title', 'children'),
-# #     Input('input_on_submit', 'value')
-# # )
-# # def performance_table_title(input_value):
-# #     return 'Performance of {}'.format(input_value)
+#     z_score_list_one_year = get_list_of_z_scores(list_of_i_and_date, 1)
+#     z_score_list_three_year = get_list_of_z_scores(list_of_i_and_date, 3)
+#     z_score_list_one_year.reverse()
+#     z_score_list_three_year.reverse()
 #
-# @app.callback(
-#     Output('relative_performance_table_title', 'children'),
-#     Input('input_on_submit', 'value')
-# )
-# def get_relative_performance_table_title(input_value):
-#     return 'Relative performance of selected tickers vs {}'.format(input_value)
-#
-# @app.callback(
-#     Output('correlation_table_title', 'children'),
-#     Input('input_on_submit', 'value')
-# )
-# def get_relative_performance_table_title(input_value):
-#     return 'Correlation table of selected tickers vs {}'.format(input_value)
-#
-# @app.callback(
-#     Output('correlation_chart_title', 'children'),
-#     Input('input_on_submit', 'value')
-# )
-# def get_relative_performance_table_title(input_value):
-#     return '30D rolling correlation chart of selected tickers vs {}'.format(input_value)
+#     fig = go.Figure(go.Scatter(
+#         x=weeks,
+#         y=z_score_list_one_year,
+#         name='z-score 1y'
+#     ))
+#     fig.add_trace(go.Scatter(
+#         x=weeks,
+#         y=z_score_list_three_year,
+#         name='z-score 3y'
+#         )
+#     )
+#     fig.update_xaxes(title='date')
+#     fig.update_yaxes(title='zscore')
+#     return fig

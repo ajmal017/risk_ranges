@@ -23,7 +23,6 @@ def hurst(n_clicks, TICKER):
     N = len(ts)
     if N < 10:
         raise ValueError("Time series is too short! input series ought to have at least 20 samples!")
-
     max_k = int(np.floor(N / 2))
     R_S_dict = []
     for k in range(2, max_k + 1):
@@ -38,17 +37,14 @@ def hurst(n_clicks, TICKER):
             R += max(cumsum_list) - min(cumsum_list)
             S += np.std(subset_list[i])
         R_S_dict.append({"R": R / len(subset_list), "S": S / len(subset_list), "n": k})
-
     log_R_S = []
     log_n = []
     for i in range(len(R_S_dict)):
         R_S = (R_S_dict[i]["R"] + np.spacing(1)) / (R_S_dict[i]["S"] + np.spacing(1))
         log_R_S.append(np.log(R_S))
         log_n.append(np.log(R_S_dict[i]["n"]))
-
     x = np.array(log_n)
     y = np.array(log_R_S)
-
     fig = go.Figure(go.Scatter(
         x=x,
         y=y
@@ -63,7 +59,6 @@ def calc_hurst(data):
     N = len(ts)
     if N < 10:
         raise ValueError("Time series is too short! input series ought to have at least 20 samples!")
-
     max_k = int(np.floor(N / 2))
     R_S_dict = []
     for k in range(2, max_k + 1):
@@ -78,14 +73,12 @@ def calc_hurst(data):
             R += max(cumsum_list) - min(cumsum_list)
             S += np.std(subset_list[i])
         R_S_dict.append({"R": R / len(subset_list), "S": S / len(subset_list), "n": k})
-
     log_R_S = []
     log_n = []
     for i in range(len(R_S_dict)):
         R_S = (R_S_dict[i]["R"] + np.spacing(1)) / (R_S_dict[i]["S"] + np.spacing(1))
         log_R_S.append(np.log(R_S))
         log_n.append(np.log(R_S_dict[i]["n"]))
-
     x = np.array(log_n)
     y = np.array(log_R_S)
     lr = LinearRegression()
@@ -106,15 +99,12 @@ def hurst_range(n_clicks, TICKER):
     for n in range_n:
         hurst_n.append(calc_hurst(data[-n:])[0])
     len_hurst_n = len(hurst_n)
-
     x = np.array(np.arange(len_hurst_n))
     y = np.hstack(hurst_n)
-
     fig = go.Figure(go.Scatter(
         x=x,
         y=y
     ))
-
     fig.update_layout(
         title='R/S cycle length',
         xaxis=dict(
