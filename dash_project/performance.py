@@ -1,7 +1,5 @@
-import datetime
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import dash_bootstrap_components as dbc
 
 from datetime import timedelta, date
@@ -12,14 +10,11 @@ from .server import app
 
 @app.callback(
     Output('corr_table_window_x', 'children'),
-    [Input('input_on_submit', 'value'),
-     Input('submit_val_rel_p', 'n_clicks')],
-    [State('input_on_submit_rel_p', 'value')]
-)
-def get_correlation_table_window_x(TICKER, n_clicks, MULTP_TICKERS):
-    '''
-    :return: Correlation table of the securities
-    '''
+    [Input('submit_val_corr', 'n_clicks'),
+     Input('submit_val_corr_drop', 'n_clicks')],
+    [State('input_on_submit_corr', 'value'),
+     State('input_on_submit_corr_drop', 'value')])
+def get_correlation_table_window_x(n_clicks, n_clicks_rel_p,TICKER, MULTP_TICKERS):
     MULTP_TICKERS = [i + '_close' for i in MULTP_TICKERS]
     data = all_tickers_data.loc[:,MULTP_TICKERS]
     ticker_data = all_tickers_data.loc[:,f'{TICKER}_close']
@@ -182,14 +177,3 @@ def factor_sector_performance():
 def daterange(date1, date2):
     for n in range(int ((date2 - date1).days)+1):
         yield date1 + timedelta(n)
-
-
-
-
-
-
-
-
-
-
-

@@ -2,11 +2,13 @@ import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 import dash_table
+import plotly.graph_objects as go
+import pandas as pd
 
 from .server import app
-from dash_project.get_data import ticker_list
+from dash_project.get_data import ticker_list, all_tickers_data
 from dash_project.cftc_analyser import cftc_df
-from dash_project.performance import factor_sector_performance
+from dash_project.performance import factor_sector_performance, get_performance, relative_performance
 from dash.dependencies import Input, Output, State
 
 
@@ -48,38 +50,6 @@ sidebar = html.Div(
         ),
     ],
     style=SIDEBAR_STYLE,
-)
-
-sec_selector = html.Div(
-    [
-        html.Br(),
-        html.H4('Base Ticker'),
-        dbc.Input(
-            id='input_on_submit',
-            value='SPY',
-            placeholder='Input ticker'
-        ),
-        html.Br(),
-        dbc.Button(
-            'Submit ticker',
-            id='submit_val'
-        ),
-        html.Br(),
-        html.Br(),
-        html.H4('Comp Tickers'),
-        dcc.Dropdown(
-            id='input_on_submit_rel_p',
-            options=[{'label': x, 'value': x} for x in ticker_list],
-            multi=True,
-            placeholder='Select ticker(s)',
-            value=['XLY', 'XLF', 'XLV', 'XLK', 'XLP', 'XLI', 'XLB', 'XLE', 'XLU', 'XLRE', 'XLC']
-        ),
-        html.Br(),
-        dbc.Button(
-            'Submit ticker(s)',
-            id='submit_val_rel_p'
-        )
-    ]
 )
 
 base_sec_selector = html.Div(
@@ -125,6 +95,60 @@ style_dc = [{
                'color': 'white'}]
 
 @app.callback(
+    Output('graph_of_chart', 'figure'),
+    [Input('submit_val', 'n_clicks')],
+    [State('input_on_submit', 'value')])
+def get_chart(n_clicks, TICKER):
+    data = all_tickers_data.loc[:,f'{TICKER}_close']
+    fig = go.Figure(go.Scatter(
+        x=data.index,
+        y=data,
+        name='price'))
+    fig.update_xaxes(title='date')
+    fig.update_yaxes(title='price')
+    fig.update_layout(
+        title={
+            'text': f"{TICKER}",
+            'y': 0.9,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'})
+    return fig
+
+@app.callback(
+    Output('correlation_chart', 'figure'),
+    [Input('submit_val_corr', 'n_clicks'),
+     Input('submit_val_corr_drop', 'n_clicks')],
+    [State('input_on_submit_corr', 'value'),
+     State('input_on_submit_corr_drop', 'value')])
+def get_correlation_chart(n_clicks, n_clicks_corr, TICKER, MULTP_TICKERS):
+    MULTP_TICKERS = [i + '_close' for i in MULTP_TICKERS]
+    data = all_tickers_data.loc[:, MULTP_TICKERS]
+    ticker_data = all_tickers_data.loc[:, f'{TICKER}_close']
+    dataframe = pd.DataFrame()
+    window_list = [30]
+    for window in window_list:
+        for i in list(MULTP_TICKERS):
+            dataframe[f'{TICKER}_{i}_{window}'] = ticker_data.rolling(window).corr(data[i])
+    l = int(len(dataframe.columns) / len(window_list))
+    fig = go.Figure()
+    x = data.index
+    for i in list(dataframe.columns):
+        fig.add_trace((go.Scatter(x=x, y=dataframe[i], name=i[len(TICKER)+1:-9])))
+    fig.update_xaxes(title='date')
+    fig.update_yaxes(title='correlation')
+    fig.update_layout(
+        yaxis_range=[-1, 1],
+        title={
+            'text': f"{TICKER} 30D correlations",
+            'y': 0.9,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'}
+    )
+    return fig
+
+@app.callback(
     Output("page-content", "children"),
     [Input("url", "pathname")]
 )
@@ -135,13 +159,40 @@ def render_page_content(pathname):
         return dbc.Container([
             dbc.Row([
                 dbc.Col([
-                    sec_selector
+                    html.H4('Base Ticker'),
+                    dbc.Input(
+                        id='input_on_submit',
+                        value='SPY',
+                        placeholder='Input ticker'
+                    ),
+                    html.Br(),
+                    dbc.Button(
+                        'Submit ticker',
+                        id='submit_val'
+                    ),
+                    html.Br(),
+                    html.Br(),
+                    html.H4('Comp Tickers'),
+                    dcc.Dropdown(
+                        id='input_on_submit_rel_p',
+                        options=[{'label': x, 'value': x} for x in ticker_list],
+                        multi=True,
+                        placeholder='Select ticker(s)',
+                        value=['XLY', 'XLF']
+                    ),
+                    html.Br(),
+                    dbc.Button(
+                        'Submit ticker(s)',
+                        id='submit_val_rel_p'
+                    )
                 ]),
-                dbc.Col(
+            ]),
+            dbc.Row(
+                dbc.Col([
                     dcc.Graph(
                         id='graph_of_chart')
-                )
-            ]),
+                ])
+            ),
             dbc.Row([
                 dbc.Col([
                     html.Br(),
@@ -175,8 +226,37 @@ def render_page_content(pathname):
         return dbc.Container([
                 dbc.Row([
                     dbc.Col([
-                        sec_selector
-                    ]),
+                        html.Br(),
+                        html.H4('Base Ticker'),
+                        dbc.Input(
+                            id='input_on_submit_corr',
+                            value='SPY',
+                            placeholder='Input ticker'
+                        ),
+                        html.Br(),
+                        dbc.Button(
+                            'Submit ticker',
+                            id='submit_val_corr'
+                        ),
+                        html.Br(),
+                        html.Br(),
+                        html.H4('Comp Tickers'),
+                        dcc.Dropdown(
+                            id='input_on_submit_corr_drop',
+                            options=[{'label': x, 'value': x} for x in ticker_list],
+                            multi=True,
+                            placeholder='Select ticker(s)',
+                            value=['XLY', 'XLF']
+                        ),
+                        html.Br(),
+                        dbc.Button(
+                            'Submit ticker(s)',
+                            id='submit_val_corr_drop'
+                        )
+
+                    ])
+                ]),
+                dbc.Row([
                     dbc.Col(
                         dcc.Graph(
                             id='correlation_chart'

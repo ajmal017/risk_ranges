@@ -1,17 +1,15 @@
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
+import datetime
+import zipfile, urllib.request, shutil
 import math
-import matplotlib.pyplot as plt
 import yaml
 import os
 import pandas as pd
-import plotly
-import plotly.graph_objects as go
-import plotly.express as px
-import plotly.tools as tls
 import time
 
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from zipfile import ZipFile
+
 
 
 START_TIME = time.time()
@@ -119,34 +117,39 @@ def get_list_of_z_scores(list_of_i_and_date, year_count):
         the_list.append(calculate_z_score(list_of_i_and_date, begin_date, end_date))
     return the_list
 
+def get_cot_zip_file(url, file_name):
+    with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
+        shutil.copyfileobj(response, out_file)
 
-# def get_data_files(DATA_DIR):
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
+
+years = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021]
+for year in years:
+    file = f'{DATA_DIR}/{year}.zip'
+    get_cot_zip_file(f'https://www.cftc.gov/files/dea/history/dea_com_xls_{year}.zip', file)
+
+
 data_files = os.listdir(DATA_DIR)
 for data_file in data_files:
-    if ".zip" in data_file:
+    if '.zip' in data_file:
         data_file_name = data_file[:-4]
         if extract_zip_files:
-            with ZipFile("%s/%s" % (DATA_DIR, data_file), 'r') as zipObj:
-                listOfFileNames = zipObj.namelist()
+            with ZipFile(f"{DATA_DIR}/{data_file}", 'r') as f:
+                listOfFileNames = f.namelist()
                 fileName = listOfFileNames[0]
-                zipObj.extractall("/tmp")
-                os.replace("/tmp/%s" % fileName, "/tmp/%s.xls" % data_file_name)
+                f.extractall("dash_project/tmp")
+                os.replace(f"dash_project/tmp/{fileName}", f"dash_project/tmp/{data_file_name}.xls")
 
-        xl = pd.ExcelFile("/tmp/%s.xls" % data_file_name)
-        sheet_name = xl.sheet_names[0]
-        df = pd.read_excel(xl, sheet_name, usecols=[NAME, DATE, INTEREST, LONG, SHORT])
-
+        xl = pd.ExcelFile(f"/tmp/{data_file_name}.xls")
+        df = pd.read_excel(xl, usecols=[NAME, DATE, INTEREST, LONG, SHORT])
         name_list += list(df[NAME])
         date_list += list(df[DATE])
-        # interest_list += list(df[INTEREST])
+        interest_list += list(df[INTEREST])
         long_list += list(df[LONG])
         short_list += list(df[SHORT])
 
-
-
-
 num_of_entries = len(name_list)
-
 cwd = os.getcwd()
 with open("dash_project/metrics.yaml", 'r') as yf:
     metrics = yaml.safe_load(yf)
@@ -181,6 +184,6 @@ for column in cftc_df.iloc[:,1:]:
 
 cftc_df = cftc_df.round(2)
 
-# print("------- %s seconds ------------" % (time.time() - START_TIME))
+print("------- %s seconds ------------" % (time.time() - START_TIME))
 
 
