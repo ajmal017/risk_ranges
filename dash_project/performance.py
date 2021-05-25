@@ -54,26 +54,35 @@ def get_correlation_table_window_x(n_clicks, n_clicks_rel_p,TICKER, MULTP_TICKER
      State('input_on_submit_rel_p', 'value')]
 )
 def get_performance(n_clicks, n_clicks_rel_val, TICKER, MULTP_TICKERS):
-    window_names = ['Ticker', 'Price', '1-Day %', 'MTD %', 'QTD %', 'YTD %', 'vs 52w max', 'vs 52w min']
+    window_names = ['Ticker', 'Price', '1-Day %', '1-Week %', 'MTD %','3-Months %', 'QTD %', 'YTD %', 'vs 52w max', 'vs 52w min']
     end_dt = date.today()
     start_dt_ytd = date(2021, 1, 1)
-    start_dt_qtd = date(2021, 4, 1)
+    start_dt_qtd = date(2021, 3, 1)
+    start_dt_3m = end_dt - timedelta(weeks=12)
     start_dt_mtd = end_dt.replace(day=1)
-    len_mtd = 0
-    len_qtd = 0
-    len_ytd = 0
-    weekdays = [5, 6]
+    start_dt_week = end_dt - timedelta(weeks=1)
+    len_week, len_mtd, len_3m, len_qtd, len_ytd = 0, 0, 0, 0, 0
+
+    weekenddays = [5, 6]
     for dt in daterange(start_dt_ytd, end_dt):
-        if dt.weekday() not in weekdays:
+        if dt.weekday() not in weekenddays:
             len_ytd += 1
 
     for dt in daterange(start_dt_qtd, end_dt):
-        if dt.weekday() not in weekdays:
+        if dt.weekday() not in weekenddays:
             len_qtd += 1
 
     for dt in daterange(start_dt_mtd, end_dt):
-        if dt.weekday() not in weekdays:
+        if dt.weekday() not in weekenddays:
             len_mtd += 1
+
+    for dt in daterange(start_dt_week, end_dt):
+        if dt.weekday() not in weekenddays:
+            len_week += 1
+
+    for dt in daterange(start_dt_3m, end_dt):
+        if dt.weekday() not in weekenddays:
+            len_3m += 1
 
     df = pd.DataFrame()
     MULTP_TICKERS = [i + '_close' for i in MULTP_TICKERS]
@@ -81,7 +90,7 @@ def get_performance(n_clicks, n_clicks_rel_val, TICKER, MULTP_TICKERS):
     for ticker in ticker_list:
         data = all_tickers_data[ticker]
         latest = data[-1]
-        range = [2, len_mtd, len_qtd, len_ytd]
+        range = [2,len_week, len_mtd, len_3m, len_qtd, len_ytd]
         results = []
         for time in range:
             results.append((latest - data[-time]) / latest)
@@ -121,6 +130,7 @@ def relative_performance(n_clicks, n_clicks_rel_p, TICKER, MULTP_TICKERS):
     len_qtd = 0
     len_ytd = 0
     weekdays = [5,6]
+
     for dt in daterange(start_dt_ytd, end_dt):
         if dt.weekday() not in weekdays:
             len_ytd += 1

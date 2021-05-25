@@ -1,16 +1,18 @@
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
-import dash_table
 import plotly.graph_objects as go
 import pandas as pd
 
 from .server import app
 from dash_project.get_data import ticker_list, all_tickers_data
-from dash_project.cftc_analyser import cftc_df
+from dash_project.cftc_analyser import cftc_metrics_non_comm, get_asset_lists
 from dash_project.performance import factor_sector_performance, get_performance, relative_performance
+from dash_project.rescaled_range import hurst_regression_fig, hurst, hurst_cyle_graph, realised_vol, realised_vol_graph
 from dash.dependencies import Input, Output, State
 
+
+app.config.suppress_callback_exceptions = True
 
 # the style arguments for the sidebar. We use position:fixed and a fixed width
 SIDEBAR_STYLE = {
@@ -52,52 +54,36 @@ sidebar = html.Div(
     style=SIDEBAR_STYLE,
 )
 
-base_sec_selector = html.Div(
-    [
-        html.Br(),
-        html.H4('Base Ticker'),
-        dbc.Input(
-            id='input_on_submit_base',
-            value='SPY',
-            placeholder='Input ticker'
-        ),
-        html.Br(),
-        dbc.Button(
-            'Submit ticker',
-            id='submit_ticker_base'
-        )
-    ]
-)
-
-style_dc = [{
-               'if': {
-                   'filter_query': '{1y zscore} < -1.5',
-                   'column_id': '1y zscore'},
-               'backgroundColor':'tomato',
-               'color':'white'},\
-           {
-               'if': {
-                   'filter_query': '{1y zscore} > 1.5',
-                   'column_id': '1y zscore'},
-               'backgroundColor': '#3D9970',
-               'color': 'white'},\
-           {
-               'if': {
-                   'filter_query': '{3y zscore} < -1.5',
-                   'column_id': '3y zscore'},
-               'backgroundColor': 'tomato',
-               'color': 'white'},\
-           {
-               'if': {
-                   'filter_query': '{3y zscore} > 1.5',
-                   'column_id': '3y zscore'},
-               'backgroundColor': '#3D9970',
-               'color': 'white'}]
+# style_dc = [{
+#                'if': {
+#                    'filter_query': '{1y zscore} < -1.5',
+#                    'column_id': '1y zscore'},
+#                'backgroundColor':'tomato',
+#                'color':'white'},\
+#            {
+#                'if': {
+#                    'filter_query': '{1y zscore} > 1.5',
+#                    'column_id': '1y zscore'},
+#                'backgroundColor': '#3D9970',
+#                'color': 'white'},\
+#            {
+#                'if': {
+#                    'filter_query': '{3y zscore} < -1.5',
+#                    'column_id': '3y zscore'},
+#                'backgroundColor': 'tomato',
+#                'color': 'white'},\
+#            {
+#                'if': {
+#                    'filter_query': '{3y zscore} > 1.5',
+#                    'column_id': '3y zscore'},
+#                'backgroundColor': '#3D9970',
+#                'color': 'white'}]
 
 @app.callback(
     Output('graph_of_chart', 'figure'),
     [Input('submit_val', 'n_clicks')],
-    [State('input_on_submit', 'value')])
+    [State('input_on_submit', 'value')]
+)
 def get_chart(n_clicks, TICKER):
     data = all_tickers_data.loc[:,f'{TICKER}_close']
     fig = go.Figure(go.Scatter(
@@ -149,6 +135,30 @@ def get_correlation_chart(n_clicks, n_clicks_corr, TICKER, MULTP_TICKERS):
     return fig
 
 @app.callback(
+    Output('rs_regression_graph', 'figure'),
+    [Input('vol_submit', 'n_clicks')],
+    [State('vol_input', 'value')]
+)
+def vol_regression_graph(n_clicks, value):
+    return hurst_regression_fig(hurst(value))
+
+@app.callback(
+    Output('rs_cycle_graph', 'figure'),
+    [Input('vol_submit', 'n_clicks')],
+    [State('vol_input', 'value')]
+)
+def vol_cycle_graph(n_clicks, value):
+    return hurst_cyle_graph(value)
+
+@app.callback(
+    Output('realised_vol_graph', 'figure'),
+    [Input('vol_submit', 'n_clicks')],
+    [State('vol_input', 'value')]
+)
+def vol_graph(n_clicks, value):
+    return realised_vol_graph(realised_vol(value))
+
+@app.callback(
     Output("page-content", "children"),
     [Input("url", "pathname")]
 )
@@ -159,6 +169,7 @@ def render_page_content(pathname):
         return dbc.Container([
             dbc.Row([
                 dbc.Col([
+                    html.Br(),
                     html.H4('Base Ticker'),
                     dbc.Input(
                         id='input_on_submit',
@@ -279,25 +290,50 @@ def render_page_content(pathname):
         return dbc.Container([
             dbc.Row([
                 dbc.Col(
-                    base_sec_selector
+                    html.Div([
+                        html.H4('Base Ticker'),
+                        dcc.Dropdown(
+                            id='vol_input',
+                            options=[{'label': x, 'value': x} for x in ticker_list],
+                            value='SPY',
+                            placeholder='Select security',
+                            multi=False
+                        ),
+                        html.Br(),
+                        dbc.Button(
+                            'Get chart',
+                            id='vol_submit'
+                        )
+                    ])
                 )
             ]),
             dbc.Row([
                 dbc.Col([
                     html.Br(),
-                    html.Br(),
-                    html.H4('R/S regression'),
-                    dcc.Graph(
-                        id='rs_regression_graph'
-                    )
+                    html.Div([
+                        html.H4('R/S regression'),
+                        html.Div([
+                            dcc.Graph(id='rs_regression_graph')
+                        ])
+                    ])
                 ]),
                 dbc.Col([
-                    html.Br(),
-                    html.Br(),
-                    html.H4('R/S cycle length'),
-                    dcc.Graph(
-                        id='rs_cycle'
-                    )
+                    html.Div([
+                        html.H4('R/S cycle graph'),
+                        html.Div([
+                            dcc.Graph(id='rs_cycle_graph')
+                        ])
+                    ])
+                ])
+            ]),
+            dbc.Row([
+                dbc.Col([
+                    html.Div([
+                        html.H4('Volatility'),
+                        html.Div([
+                            dcc.Graph(id='realised_vol_graph')
+                        ])
+                    ])
                 ])
             ])
         ])
@@ -306,23 +342,77 @@ def render_page_content(pathname):
         return dbc.Container([
             dbc.Row([
                 dbc.Col(
-                   base_sec_selector
+                    html.Div([
+                        html.H4('Base Ticker'),
+                        dcc.Dropdown(
+                            id='cftc_input',
+                            options=[{'label':x, 'value':x} for x in cftc_metrics_non_comm],
+                            value='SPX',
+                            placeholder='Select security',
+                            multi=False
+                        ),
+                        html.Br(),
+                        dbc.Button(
+                            'Get chart',
+                            id='cftc_submit'
+                        ),
+                    ])
                 ),
-                dbc.Col(
-
-                )
             ]),
+            html.Br(),
             dbc.Row([
                 dbc.Col([
-                    html.Br(),
-                    html.Br(),
-                    html.H4('CFTC Non-Commercial Net Long Positioning'),
-                    dash_table.DataTable(
-                        data=cftc_df.to_dict('records'),
-                        columns=[{"name": i, "id": i} for i in cftc_df.columns],
-                        sort_action='native',
-                        editable=True,
-                        style_data_conditional=style_dc
+                    html.H4('CFTC positioning'),
+                    html.Div(
+                        id='cftc_positioning'
+                    )
+                ])
+            ]),
+            html.Br(),
+            dbc.Row([
+                dcc.Graph(
+                    id='cftc_graph'
+                )
+            ]),
+            dbc.Row(
+                dbc.Col([
+                    html.Div([
+                        html.Br(),
+                        html.Br(),
+                        html.H4('Asset class selector'),
+                        dcc.Dropdown(
+                            id='cftc_input_df',
+                            options=[{'label': x, 'value': x} for x in get_asset_lists()],
+                            value=['SPX', 'VIX', 'Nasdaq', '10Y UST', 'UST Bonds', 'EUR', 'JPY', 'Crude Oil', 'Gold',
+                                   'BTC'],
+                            placeholder='Select security',
+                            multi=True
+                        ),
+                        html.Br(),
+                        dbc.Button(
+                            'Get CFTC datatable',
+                            id='cftc_submit_df'
+                        )
+                    ])
+                ])
+            ),
+            html.Br(),
+            html.Br(),
+            dbc.Row([
+                dbc.Col([
+                    html.H4('CFTC Non-Commercial Datatable'),
+                    html.Div(
+                        id='cftc_datatable_non_comm'
+                    )
+                ])
+            ]),
+            html.Br(),
+            html.Br(),
+            dbc.Row([
+                dbc.Col([
+                    html.H4('CFTC Commercial Datatable'),
+                    html.Div(
+                        id='cftc_datatable_comm'
                     )
                 ])
             ])

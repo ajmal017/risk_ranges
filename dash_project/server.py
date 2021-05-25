@@ -5,4 +5,4 @@ from flask import Flask
 
 
 server = Flask('__name__')
-app = dash.Dash(server=server, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(server=server, external_stylesheets=[dbc.themes.UNITED])

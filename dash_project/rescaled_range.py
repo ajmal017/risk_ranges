@@ -1,23 +1,16 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
-import statsmodels.api as sm
 
-from scipy import stats
-from sklearn.linear_model import LinearRegression
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from dash_project.get_data import all_tickers_data
-from .server import app
-from dash.dependencies import Input, Output, State
+from hurst import compute_Hc
+from sklearn.linear_model import LinearRegression
 
 
-@app.callback(
-    Output('rs_regression_graph', 'figure'),
-    Input('submit_ticker_base', 'n_clicks'),
-    [State('input_on_submit_base', 'value')]
-)
-def hurst(n_clicks, TICKER):
-    data = all_tickers_data[TICKER+'_close']
+def hurst(TICKER):
+    data = all_tickers_data.loc[:,f'{TICKER}_close']
     log_returns = np.log(data) - np.log(data.shift(1))
     ts = list(log_returns[2:])
     N = len(ts)
@@ -43,8 +36,13 @@ def hurst(n_clicks, TICKER):
         R_S = (R_S_dict[i]["R"] + np.spacing(1)) / (R_S_dict[i]["S"] + np.spacing(1))
         log_R_S.append(np.log(R_S))
         log_n.append(np.log(R_S_dict[i]["n"]))
+
     x = np.array(log_n)
     y = np.array(log_R_S)
+    return x, y
+
+def hurst_regression_fig(data):
+    x, y = data
     fig = go.Figure(go.Scatter(
         x=x,
         y=y
@@ -87,12 +85,7 @@ def calc_hurst(data):
     intercept = lr.intercept_
     return hurst, intercept
 
-@app.callback(
-    Output('rs_cycle', 'figure'),
-    Input('submit_ticker_base', 'n_clicks'),
-    [State('input_on_submit_base', 'value')]
-)
-def hurst_range(n_clicks, TICKER):
+def hurst_cyle_graph(TICKER):
     data = all_tickers_data[TICKER+'_close']
     range_n = [21, 63, 126, 251]
     hurst_n = []
@@ -106,7 +99,6 @@ def hurst_range(n_clicks, TICKER):
         y=y
     ))
     fig.update_layout(
-        title='R/S cycle length',
         xaxis=dict(
             tickmode='array',
             tickvals=np.array(np.arange(len_hurst_n)),
@@ -114,5 +106,26 @@ def hurst_range(n_clicks, TICKER):
         )
     )
     return fig
+
+def realised_vol(TICKER):
+    window_size = 30
+    data = all_tickers_data[TICKER + '_close']
+    vol_30d = data.pct_change().rolling(window_size).std() * (252 ** 0.5)
+    vol_30d = vol_30d[30:]
+    return vol_30d
+
+def realised_vol_graph(data):
+    weeks = []
+    for i in range(0,len(data)):
+        weeks.append(datetime.now() - relativedelta(days=i))
+    weeks.reverse()
+    fig = go.Figure(go.Scatter(
+        x=weeks,
+        y=data,
+        name='30d realised vol'
+    ))
+    fig.update_layout(yaxis_tickformat='%')
+    return fig
+
 
 
