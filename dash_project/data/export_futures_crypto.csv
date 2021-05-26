@@ -1,0 +1,17 @@
+Ticker,Type,Exchange,Expiration Date,Multiplier,Base Currency,Symbol,Quote Currency,;;;;;;;
+SPX,IND,CBOE,,,USD,SPX,;;;;;;;
+M2K,FUT,GLOBEX,202106,5,USD,,;;;;;;;
+MYM,FUT,ECBOT,202106,0.5,USD,,;;;;;;;
+MES,FUT,GLOBEX,202106,5,USD,,;;;;;;;
+MNQ,FUT,GLOBEX,202106,2,USD,,;;;;;;;
+VXXLE,IND,CBOE,,,USD,,;;;;;;;
+VVIX,IND,CBOE,,,USD,,;;;;;;;
+GVZ,IND,CBOE,,,USD,,;;;;;;; 
+VXAPL,IND,CBOE,,,USD,,;;;;;;;
+VXN,IND,CBOE,,,USD,,;;;;;;;
+VIX,IND,CBOE,,,USD,,;;;;;;;
+UVXY,STK,SMART,,,USD,,;;;;;;;
+OVX,IND,CBOE,,,USD,,;;;;;;;
+VXSLV,IND,CBOE,,,USD,,;;;;;;;
+RVX,IND,CBOE,,,USD,,;;;;;;;
+BRR,IND,CME,,,USD,;;;;;;;

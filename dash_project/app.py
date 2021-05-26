@@ -7,7 +7,7 @@ import pandas as pd
 from .server import app
 from dash_project.get_data import ticker_list, all_tickers_data
 from dash_project.cftc_analyser import cftc_metrics_non_comm, get_asset_lists
-from dash_project.performance import factor_sector_performance, get_performance, relative_performance
+from dash_project.performance import factor_sector_performance, get_performance, relative_performance, fx_performance
 from dash_project.rescaled_range import hurst_regression_fig, hurst, hurst_cyle_graph, realised_vol, realised_vol_graph
 from dash.dependencies import Input, Output, State
 
@@ -171,10 +171,12 @@ def render_page_content(pathname):
                 dbc.Col([
                     html.Br(),
                     html.H4('Base Ticker'),
-                    dbc.Input(
+                    dcc.Dropdown(
                         id='input_on_submit',
-                        value='SPY',
-                        placeholder='Input ticker'
+                        options=[{'label': x, 'value': x} for x in ticker_list],
+                        value='SPX',
+                        placeholder='Select security',
+                        multi=False
                     ),
                     html.Br(),
                     dbc.Button(
@@ -189,7 +191,7 @@ def render_page_content(pathname):
                         options=[{'label': x, 'value': x} for x in ticker_list],
                         multi=True,
                         placeholder='Select ticker(s)',
-                        value=['XLY', 'XLF']
+                        value=['XLY', 'XLF','XLV','XLK','XLP','XLI','XLB','XLE','XLU']
                     ),
                     html.Br(),
                     dbc.Button(
@@ -230,6 +232,15 @@ def render_page_content(pathname):
                         factor_sector_performance()
                     )
                 ])
+            ]),
+            dbc.Row([
+                dbc.Col([
+                    html.Br(),
+                    html.H4('FX Performance'),
+                    html.Div(
+                        fx_performance()
+                    )
+                ])
             ])
         ])
 
@@ -241,7 +252,7 @@ def render_page_content(pathname):
                         html.H4('Base Ticker'),
                         dbc.Input(
                             id='input_on_submit_corr',
-                            value='SPY',
+                            value='UUP',
                             placeholder='Input ticker'
                         ),
                         html.Br(),
@@ -257,7 +268,7 @@ def render_page_content(pathname):
                             options=[{'label': x, 'value': x} for x in ticker_list],
                             multi=True,
                             placeholder='Select ticker(s)',
-                            value=['XLY', 'XLF']
+                            value=['SPX','USO','DBC','GLD', 'BRR']
                         ),
                         html.Br(),
                         dbc.Button(
@@ -383,8 +394,7 @@ def render_page_content(pathname):
                         dcc.Dropdown(
                             id='cftc_input_df',
                             options=[{'label': x, 'value': x} for x in get_asset_lists()],
-                            value=['SPX', 'VIX', 'Nasdaq', '10Y UST', 'UST Bonds', 'EUR', 'JPY', 'Crude Oil', 'Gold',
-                                   'BTC'],
+                            value=['SPX', '10Y UST', 'Crude Oil', 'Copper', 'Gold', 'USD', 'JPY', 'EUR', 'GBP', 'BTC'],
                             placeholder='Select security',
                             multi=True
                         ),
@@ -404,17 +414,18 @@ def render_page_content(pathname):
                     html.Div(
                         id='cftc_datatable_non_comm'
                     )
-                ])
-            ]),
-            html.Br(),
-            html.Br(),
-            dbc.Row([
+                ]),
                 dbc.Col([
                     html.H4('CFTC Commercial Datatable'),
                     html.Div(
                         id='cftc_datatable_comm'
                     )
                 ])
+            ]),
+            html.Br(),
+            html.Br(),
+            dbc.Row([
+
             ])
         ])
 

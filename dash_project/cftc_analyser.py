@@ -229,8 +229,6 @@ def get_CFTC_df_selection(n_clicks, MULTP_ASSETS):
         cftc_df_comm.loc[MULTP_ASSETS, :],
         bordered=True)
 
-
-
 @app.callback(
     Output('cftc_graph', 'figure'),
     [Input('cftc_submit', 'n_clicks')],

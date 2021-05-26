@@ -96,12 +96,12 @@ def get_performance(n_clicks, n_clicks_rel_val, TICKER, MULTP_TICKERS):
             results.append((latest - data[-time]) / latest)
         yearly_high = data.max()
         yearly_low = data.min()
-        vs_52_max = -((yearly_high - latest) / latest)
-        vs_52_min = -((yearly_low - latest) / latest)
+        vs_52_max = ((latest - yearly_high) / latest)
+        vs_52_min = ((latest - yearly_low) / latest)
         results.append(vs_52_max)
         results.append(vs_52_min)
         results = ["{:.2%}".format(y) for y in results]
-        results.insert(0, data[-1])
+        results.insert(0, data[-1].round(2))
         df[ticker[:-6]] = results
     df = df.T.reset_index()
     df.columns = window_names
@@ -150,11 +150,64 @@ def relative_performance(n_clicks, n_clicks_rel_p, TICKER, MULTP_TICKERS):
         latest_i = data[i].iloc[-1]
         latest_td = ticker_data[-1]
         for time in range:
-            results.append(((latest_td - ticker_data[-time]) / latest_td) - ((latest_i - data[i].iloc[-time]) / latest_i))
+            results.append(((ticker_data[-time]/latest_td) - (data[i].iloc[-time]/latest_i)))
         results = ["{:.2%}".format(y) for y in results]
         df[i[:-6]] = results
     df = df.T.reset_index()
     df.columns = window_names_rel_performance
+    return dbc.Table.from_dataframe(df, bordered=True)
+
+def fx_performance():
+    window_names = ['Ticker', 'Price', '1-Day %', '1-Week %', 'MTD %','3-Months %', 'QTD %', 'YTD %', 'vs 52w max', 'vs 52w min']
+    ticker_list = ['EURUSD','GBPUSD','AUDUSD','NZDUSD','USDJPY','USDCAD','USDCHF','USDSEK']
+    end_dt = date.today()
+    start_dt_ytd = date(2021, 1, 1)
+    start_dt_qtd = date(2021, 3, 1)
+    start_dt_3m = end_dt - timedelta(weeks=12)
+    start_dt_mtd = end_dt.replace(day=1)
+    start_dt_week = end_dt - timedelta(weeks=1)
+    len_week, len_mtd, len_3m, len_qtd, len_ytd = 0, 0, 0, 0, 0
+
+    weekenddays = [5,6]
+    for dt in daterange(start_dt_ytd, end_dt):
+        if dt.weekday() not in weekenddays:
+            len_ytd += 1
+
+    for dt in daterange(start_dt_qtd, end_dt):
+        if dt.weekday() not in weekenddays:
+            len_qtd += 1
+
+    for dt in daterange(start_dt_mtd, end_dt):
+        if dt.weekday() not in weekenddays:
+            len_mtd += 1
+
+    for dt in daterange(start_dt_week, end_dt):
+        if dt.weekday() not in weekenddays:
+            len_week += 1
+
+    for dt in daterange(start_dt_3m, end_dt):
+        if dt.weekday() not in weekenddays:
+            len_3m += 1
+
+    range = [2,len_week, len_mtd, len_3m, len_qtd, len_ytd]
+    df = pd.DataFrame()
+    for ticker in ticker_list:
+        data = all_tickers_data[ticker+'_close']
+        latest = data[-1]
+        results = []
+        for time in range:
+            results.append((latest - data[-time]) / latest)
+        yearly_high = data.max()
+        yearly_low = data.min()
+        vs_52_max = -((yearly_high - latest) / latest)
+        vs_52_min = -((yearly_low - latest) / latest)
+        results.append(vs_52_max)
+        results.append(vs_52_min)
+        results = ["{:.2%}".format(y) for y in results]
+        results.insert(0, data[-1].round(2))
+        df[ticker] = results
+    df = df.T.reset_index()
+    df.columns = window_names
     return dbc.Table.from_dataframe(df, bordered=True)
 
 def factor_sector_performance():
