@@ -154,7 +154,7 @@ def getLists():
                     f.extractall("dash_project/tmp")
                     os.replace(f"dash_project/tmp/{fileName}", f"dash_project/tmp/{data_file_name}.xls")
 
-            xl = pd.ExcelFile(f"/tmp/{data_file_name}.xls")
+            xl = pd.ExcelFile(f"dash_project/tmp/{data_file_name}.xls")
             df = pd.read_excel(xl, usecols=[NAME, DATE, INTEREST, NON_COMM_LONG, NON_COMM_SHORT, COMM_LONG, COMM_SHORT])
             name_list += list(df[NAME])
             date_list += list(df[DATE])
